@@ -8,7 +8,7 @@ Both win_flex and win_bison are based on upstream sources but depend on system l
 * 2.5.x versions include GNU Bison version 3.x.x
 
 ## License
-Flex uses a [BSD license](flex/src/COPYING), GNU Bison is [licensed under the GNU General Public License (GPLv3+)](bison/src/COPYING).  
+Flex uses a [BSD license](flex/src/COPYING), GNU Bison is [licensed under the GNU General Public License (GPLv3+)](bison/src/COPYING).
 All build scripts in WinFlexBison are distributed under GPLv3+. See [COPYING](COPYING) for details.
 
 All documentation, especially those under custom_build_rules/doc, is distributed under the GNU Free Documentation License (FDL 1.3+).
@@ -25,7 +25,7 @@ The release page includes the full Changelog but you may also see the [changelog
 
 ## Build requirements
 * Visual Studio 2017 or newer
-* optional: CMake (when building with CMake)
+* optional: CMake (when building with CMake), Ninja
 
 ## HowTo
 You may use win_flex and win_bison directly on the command line or [use them via CustomBuildRules in VisualStudio](custom_build_rules/README.md).

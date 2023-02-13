@@ -722,12 +722,27 @@ muscles_output (FILE *out)
 extern int
 main_m4 (int argc, char *const *argv, FILE* in, FILE* out);
 
+
+char temp_prefix[40];
+
+/*----------------------------------------------------------------.
+| Returns a unique pid temporary file.                            |
+`----------------------------------------------------------------*/
+
+static const char *
+pid_tempnam (const char *prefix)
+{
+  // Refer to flex_tempnam for more information
+  sprintf(temp_prefix, "%s%d_", prefix, _getpid());
+  return _tempnam(NULL, temp_prefix);
+}
+
 static void
 output_skeleton (void)
 {
   FILE *m4_in = NULL;
   FILE *m4_out = NULL;
-  char m4_in_file_name[/*MAX_PATH*/260]; 
+  char m4_in_file_name[/*MAX_PATH*/260];
   char m4_out_file_name[/*MAX_PATH*/260];
   char const *argv[11];
 
@@ -813,7 +828,7 @@ output_skeleton (void)
   if (trace_flag & trace_muscles)
     muscles_output (stderr);
   {
-    char* p = _tempnam(NULL, "~m4_in_");    
+    char* p = pid_tempnam("~m4_in_");
     if (!p)
       error (EXIT_FAILURE, get_errno (),
              "_tempnam");
@@ -832,8 +847,8 @@ output_skeleton (void)
   /* Read and process m4's output.  */
   timevar_push (tv_m4);
   {
-    char *p = _tempnam(NULL, "~m4_out_");    
-    if (!m4_out_file_name)
+    char *p = pid_tempnam("~m4_out_");
+    if (!p)
       error (EXIT_FAILURE, get_errno (),
              "_tempnam");
     m4_out = fopen(strcpy(m4_out_file_name, p), "wb+");
