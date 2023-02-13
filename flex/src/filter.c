@@ -60,6 +60,42 @@ char* add_tmp_dir(const char* tmp_file_name)
 	return new_tmp_file_name;
 }
 
+char temp_prefix[40];
+// Generates a unique pid temporary file
+// This adds the unique process id to the built in _tempnam to prevent race condition
+// This race condition is more prevalent in Ninja as it parallelizes build and instantiates multiple win_flex
+// flex_temp_out_main fails frequently as its used for a longer time (compared to temp_file_names),
+// hence more possibility to overlap
+const char* flex_tempnam (const char *prefix)
+{
+	// Here is the race condition:
+	//
+	//           flex A
+	//              |                                flex B
+	//              ↓                                   |
+	//   _tempnam returns ~file_X                       ↓
+	//              |                        _tempnam returns ~file_X
+	//              ↓                                   |
+	//      freopen ~file_X w+                          ↓
+	//              |                           freopen ~file_X w+
+	//              ↓                                   |
+	//             ...                                  ↓
+	//              |                                  ...
+	//              ↓                                   |
+	//       _unlink ~file_X                           ...       <- Fails to print
+	//                                                  ↓
+	//                                           _unlink ~file_X <- Fails to delete
+	//
+	// It is also possible that ~file_X was deleted before the lagging win_flex is done, which can cause other errors,
+	// hence changing to non-fatal error upon missing ~file_X on _unlink will not work all the time
+	// This problem can be prevented with an even more unique temporary file name by adding the current process ID
+	// Synchronization is not necessary either as there is no reason for the independent processes to wait...
+	// The reason why this is an issue is because Windows filesystem is reflected immediately,
+	// unlike inode in Linux that only properly deletes files when their link count is down to zero
+	sprintf(temp_prefix, "%s%d_", prefix, _getpid());
+	return _tempnam(NULL, temp_prefix);
+}
+
 int max_temp_file_names = 100;
 int num_temp_file_names = 0;
 char* temp_file_names[100];
@@ -75,7 +111,7 @@ FILE* mkstempFILE (char *pref, const char *mode)
 	if (!pref || !*pref)
 		return NULL;
 
-	name = _tempnam(flex_tmp_dir, pref);
+	name = flex_tempnam(pref);
 	if (!name)
 		return NULL;
 
@@ -97,6 +133,7 @@ void unlinktemp()
 	{
 		--num_temp_file_names;
 
+		fprintf(stderr, "win_flex unlinktemp: deleting \"%s\"\n", temp_file_names[num_temp_file_names]);
 		if (_unlink(temp_file_names[num_temp_file_names]))
 			fprintf(stderr, _("error delete file %s"), temp_file_names[num_temp_file_names]);
 
@@ -255,7 +292,7 @@ bool filter_apply_chain (struct filter * chain, FILE* in_file, FILE* out_file)
 	}
 
 	return result;
-#if 0		
+#if 0
 	int     pid, pipes[2];
 
 

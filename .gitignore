@@ -216,4 +216,7 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 
+# Visual Studio Code
+.vscode/
+
 .cache/
