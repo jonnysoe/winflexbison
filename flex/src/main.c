@@ -1893,10 +1893,7 @@ void set_up_initial_allocations (void)
 
 /* extracts basename from path, optionally stripping the extension "\.*"
 * (same concept as /bin/sh `basename`, but different handling of extension). */
-static char *basename2(path, strip_ext, ext_path)
-char   *path;
-int strip_ext;		/* boolean */
-char **ext_path;
+static char *basename2(char *path, int strip_ext, char **ext_path)
 {
 	char   *b, *e = 0;
 

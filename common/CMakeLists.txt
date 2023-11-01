@@ -32,7 +32,9 @@ add_library(${PROJECT_NAME} STATIC
    ${SOURCE_FILES}
 )
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 90)
+# MSVC is fine due to lack of compliance, but C90 will be very restrictive on Clang compiler.
+# C99 have a more lenient variable initialization within for loop scope.
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 99)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "misc")
 target_include_directories(${PROJECT_NAME} PUBLIC "m4")

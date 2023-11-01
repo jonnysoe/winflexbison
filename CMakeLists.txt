@@ -1,10 +1,26 @@
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
+option( USE_STATIC_RUNTIME "Use static runtime for OS shipped without VC Runtime" ON )
+
+# CMake features that configures other CMake variables need to be set before project
+
+# Policy needs to be set before certain CMake features are used
+cmake_policy(SET CMP0091 NEW)   # CMAKE_MSVC_RUNTIME_LIBRARY
+
+# Use static runtime library so that it will also work on PC without Visual C++ Redistributable
+# https://learn.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features?view=msvc-170
+# Equivalent to adding:
+# - Release: /MT (-D_MT --dependent-lib=libcmt)
+# - Debug: /MDd (-D_DLL -D_MT --dependent-lib=msvcrtd)
+if (USE_STATIC_RUNTIME)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
+endif ()
+
 project (winflexbison)
 
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-    # Even MSVC-based Clang is not compatible
-    message( FATAL_ERROR "Visual Studio Build supported only (current compiler: \"${CMAKE_CXX_COMPILER_ID}\")" )
+if (NOT MSVC AND NOT CMAKE_C_SIMULATE_ID MATCHES MSVC AND NOT CMAKE_CXX_SIMULATE_ID MATCHES MSVC)
+    # Only compatible with VC Runtime
+    message( FATAL_ERROR "Only VC Runtime Build is supported (current compiler: \"${CMAKE_CXX_COMPILER_ID}\")" )
 endif()
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -18,7 +34,7 @@ add_definitions(-Dinline=__inline)
 # next line needed for VS2017 only
 add_definitions(-Drestrict=__restrict)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W3 /MD /Od /Zi /EHsc")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W3 /Od /Zi /EHsc")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /W3 /GL /Od /Oi /Gy /Zi /EHsc")
 
 # Define Release by default.
@@ -26,6 +42,11 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
   message(STATUS "Build type not specified: Use Release by default.")
 endif()
+
+# Inform user if they've specifically building with static version of CRT.
+if (USE_STATIC_RUNTIME)
+    message(STATUS "Using /MT STATIC runtime")
+endif ()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Output Variables
@@ -38,23 +59,24 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     #   applies to WIN32/MSVC.
     #------------------------------------------------------------------------
     if (MSVC)
+        # MSVC and Clang-cl
         add_compile_definitions("__extension__")
         add_compile_options("/source-charset:utf-8")
-        option( USE_STATIC_RUNTIME "Set ON to change /MD(DLL) to /MT(static)" OFF )
-        if (USE_STATIC_RUNTIME)
-            set(CompilerFlags
-                CMAKE_CXX_FLAGS
-                CMAKE_CXX_FLAGS_DEBUG
-                CMAKE_CXX_FLAGS_RELEASE
-                CMAKE_C_FLAGS
-                CMAKE_C_FLAGS_DEBUG
-                CMAKE_C_FLAGS_RELEASE
-                )
-            foreach(CompilerFlag ${CompilerFlags})
-                string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-            endforeach()
-            message(STATUS "Using /MT STATIC runtime")
-        endif ()
+    elseif (CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES GNU OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES GNU)
+        # Clang
+        # https://gitlab.kitware.com/cmake/cmake/-/issues/23530
+        # Clang does not require additional parameters for UTF-8 source files, but should KIV the above flag.
+
+        # Suppress compiler warnings for GNU coding style.
+        add_compile_options(
+            -Wno-pointer-sign               # pointers are not signed, but code base mixes signed/unsigned pointers.
+            -Wno-incompatible-pointer-types # const-pointer, pointer-to-const, const-pointer-to-const are not always compatible.
+            # https://devblogs.microsoft.com/oldnewthing/20050131-00/?p=36563
+            # Left the string format warning intact as a reminder, because long is different on Windows x64:
+            # - ld is long which is 32-bit.
+            # - lld is long long which is 64-bit.
+            # -Wno-format
+        )
     endif ()
 endif ()
 

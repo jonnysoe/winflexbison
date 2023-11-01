@@ -32,7 +32,7 @@
 #include "getargs.h"
 #include "gram.h"
 #include "lalr.h"
-#include "lr0.h"
+#include "LR0.h"
 #include "reader.h"
 #include "reduce.h"
 #include "state.h"

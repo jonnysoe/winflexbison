@@ -45,7 +45,7 @@
 #include "gram.h"
 #include "ielr.h"
 #include "lalr.h"
-#include "lr0.h"
+#include "LR0.h"
 #include "muscle-tab.h"
 #include "nullable.h"
 #include "output.h"

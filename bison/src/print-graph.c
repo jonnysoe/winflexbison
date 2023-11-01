@@ -31,7 +31,7 @@
 #include "gram.h"
 #include "graphviz.h"
 #include "lalr.h"
-#include "lr0.h"
+#include "LR0.h"
 #include "reader.h"
 #include "state.h"
 #include "symtab.h"
