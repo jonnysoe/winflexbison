@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
-option( USE_STATIC_RUNTIME "Use static runtime for OS shipped without VC Runtime" ON )
+option(USE_STATIC_RUNTIME "Use static runtime for OS shipped without VC Runtime" OFF)
 
 # CMake features that configures other CMake variables need to be set before project
 
@@ -12,15 +12,15 @@ cmake_policy(SET CMP0091 NEW)   # CMAKE_MSVC_RUNTIME_LIBRARY
 # Equivalent to adding:
 # - Release: /MT (-D_MT --dependent-lib=libcmt)
 # - Debug: /MDd (-D_DLL -D_MT --dependent-lib=msvcrtd)
-if (USE_STATIC_RUNTIME)
+if(USE_STATIC_RUNTIME)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:DebugDLL>")
-endif ()
+endif()
 
 project (winflexbison)
 
-if (NOT MSVC AND NOT CMAKE_C_SIMULATE_ID MATCHES MSVC AND NOT CMAKE_CXX_SIMULATE_ID MATCHES MSVC)
+if(NOT MSVC AND NOT CMAKE_C_SIMULATE_ID MATCHES MSVC AND NOT CMAKE_CXX_SIMULATE_ID MATCHES MSVC)
     # Only compatible with VC Runtime
-    message( FATAL_ERROR "Only VC Runtime Build is supported (current compiler: \"${CMAKE_CXX_COMPILER_ID}\")" )
+    message(FATAL_ERROR "Only VC Runtime Build is supported (current compiler: \"${CMAKE_CXX_COMPILER_ID}\")")
 endif()
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -44,25 +44,20 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Inform user if they've specifically building with static version of CRT.
-if (USE_STATIC_RUNTIME)
-    message(STATUS "Using /MT STATIC runtime")
-endif ()
+if(USE_STATIC_RUNTIME)
+    message(STATUS "Using /MT for STATIC C runtime")
+endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Output Variables
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_LIST_DIR}/bin/Debug")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_LIST_DIR}/bin/Release")
 
-    #------------------------------------------------------------------------
-    # Static Windows Runtime
-    #   Option to statically link to the Windows runtime. Maybe only
-    #   applies to WIN32/MSVC.
-    #------------------------------------------------------------------------
     if (MSVC)
         # MSVC and Clang-cl
         add_compile_definitions("__extension__")
         add_compile_options("/source-charset:utf-8")
-    elseif (CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES GNU OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES GNU)
+    elseif(CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES GNU OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES GNU)
         # Clang
         # https://gitlab.kitware.com/cmake/cmake/-/issues/23530
         # Clang does not require additional parameters for UTF-8 source files, but should KIV the above flag.
