@@ -57,6 +57,19 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         # MSVC and Clang-cl
         add_compile_definitions("__extension__")
         add_compile_options("/source-charset:utf-8")
+        # Suppress compiler warnings for GNU coding style.
+        add_compile_options(
+            /wd4018     # comparator on mismatching signed/unsigned variables
+            /wd4090     # const-pointer, pointer-to-const, const-pointer-to-const are not always compatible.
+            /wd4116     # DEFAULT_ALIGNMENT uses __alignof__ on an anonymous struct in MSVC
+            /wd4146     # minus operator on unsigned type
+            /wd4307     # intentional overflow in intprops.h
+            /wd4308     # assigment of signedvalue to unsigned typo
+            # Optional - disabled for now but potential invalid underlying conversions worth checking out
+            /wd4244     # narrowing conversion truncation, possible loss of data
+            /wd4267     # initialized with narrowing conversion, truncation, possible loss of data
+            # /wd4477     # see -Wno-format below
+        )
     elseif(CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES GNU OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES GNU)
         # Clang
         # https://gitlab.kitware.com/cmake/cmake/-/issues/23530
